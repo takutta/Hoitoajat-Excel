@@ -1,0 +1,259 @@
+﻿Private Sub Workbook_Open()
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.AskToUpdateLinks = False
+
+    Set wb = ThisWorkbook
+
+    Set sht_päiväkoti = wb.Worksheets("Päiväkoti")
+    Set sht_ryhmät = wb.Worksheets("Ryhmät")
+    Set sht_lapset = wb.Worksheets("Lapset")
+
+    Set tbl_ryhmät = sht_ryhmät.ListObjects("tbl_ryhmät")
+    Set tbl_lapset = sht_lapset.ListObjects("tbl_lapset")
+
+    Set rng_ryhmät = tbl_ryhmät.ListColumns(3).DataBodyRange
+    Set rng_lapset = tbl_lapset.ListColumns(2).DataBodyRange
+
+    Dim stPath As String
+    Dim myFileName As String
+    Dim stFullName As String
+    Dim SourceWB As Workbook
+
+    Dim VersioSource As Integer
+    Dim VersioOhjelma As Integer
+
+    VersioOhjelma = ThisWorkbook.Worksheets("Code").Range("A2").Value
+
+    myFileName = "hoitoajat-data.xlsx"
+
+    stFullName = stPath & "\" & myFileName
+    If stFullName = VBA.Constants.vbNullString Then
+        MsgBox "Tiedostoa hoitoajat-data.xlsx ei löydy." & vbCrLf & "Ohjelma ei toimi ilman tuota tiedostoa, tiedot ryhmistä ja lapsista eivät tallennu." & vbCrLf & "Laita tämä tiedosto samaan kansioon data-tiedoston kanssa ja käynnistä ohjelma uudelleen.", vbExclamation, "Virhe"
+        Application.AskToUpdateLinks = True
+        Application.ScreenUpdating = True
+        Application.DisplayAlerts = True
+        End
+    End If
+
+    On Error Resume Next
+    Workbooks.Open Application.ActiveWorkbook.Path & "\" & myFileName
+    Set SourceWB = Workbooks(myFileName)
+
+    SourceWB.Activate
+
+    ' Otetaan tietokannan versio talteen
+    ThisWorkbook.Worksheets("Code").Range("H2").Value = SourceWB.Worksheets("Koodi").Range("A2").Value
+
+    ' Aamu- ja iltalistat
+    ThisWorkbook.Worksheets("Päiväkoti").Range("I5:M5").Value = _
+                                                              SourceWB.Worksheets("Päiväkoti").Range("I5:M5").Value
+                                                          
+    ' Ruokakoonti
+    ThisWorkbook.Worksheets("Päiväkoti").Range("G8:G8").Value = _
+                                                              SourceWB.Worksheets("Päiväkoti").Range("G8:G8").Value
+
+    ' Ruokatilausten lähetys
+    ThisWorkbook.Worksheets("Päiväkoti").Range("I9:I9").Value = _
+                                                              SourceWB.Worksheets("Päiväkoti").Range("I9:I9").Value
+    ThisWorkbook.Worksheets("Päiväkoti").Range("I11:I11").Value = _
+                                                                SourceWB.Worksheets("Päiväkoti").Range("I11:I11").Value
+    ThisWorkbook.Worksheets("Päiväkoti").Range("I13:I13").Value = _
+                                                                SourceWB.Worksheets("Päiväkoti").Range("I13:I13").Value
+    ThisWorkbook.Worksheets("Päiväkoti").Range("I15:I15").Value = _
+                                                                SourceWB.Worksheets("Päiväkoti").Range("I15:I15").Value
+
+
+    ThisWorkbook.Worksheets("Lapset").Range("A2:DD1500").Value = _
+                                                               SourceWB.Worksheets("Lapset").Range("A2:DD1500").Value
+    ThisWorkbook.Worksheets("Ryhmät").Range("A2:DD1500").Value = _
+                                                               SourceWB.Worksheets("Ryhmät").Range("A2:DD1500").Value
+
+    Dim wbName As Window
+    Set wbName = ActiveWorkbook.Windows(1)       'You can use Windows("[Workbook Name]") as well
+    wbName.Visible = False
+
+    'SourceWB.Close
+
+    wb.Activate
+
+    ' Turhien rivien poisto
+    On Error Resume Next
+    If Not rng_ryhmät.SpecialCells(xlCellTypeBlanks) Is Nothing Then
+        rng_ryhmät.SpecialCells(xlCellTypeBlanks).Delete Shift:=xlUp
+    End If
+    If Not rng_lapset.SpecialCells(xlCellTypeBlanks) Is Nothing Then
+        rng_lapset.SpecialCells(xlCellTypeBlanks).Delete Shift:=xlUp
+    End If
+
+
+    Set csheet = ActiveSheet
+    For Each sht In ActiveWorkbook.Worksheets
+        If sht.Visible Then
+            sht.Activate
+            Range("A1").Select
+            ActiveWindow.ScrollRow = 1
+            ActiveWindow.ScrollColumn = 1
+        End If
+    Next sht
+
+
+
+    csheet.Activate
+    Application.AskToUpdateLinks = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
+    'Call migraatio(VersioSource)
+
+End Sub
+
+Private Sub Workbook_BeforeSave(ByVal SaveAsUI As Boolean, Cancel As Boolean)
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.AskToUpdateLinks = False
+
+    Dim stPath As String
+    Dim myFileName As String
+    Dim stFullName As String
+    Dim SourceWB As Workbook
+
+    myFileName = "hoitoajat-data.xlsx"
+    stPath = ThisWorkbook.Path
+    stFullName = stPath & "\" & myFileName
+
+    'Open and variable setting for the onedrive cash reconciliation log
+    On Error Resume Next
+    Workbooks.Open Application.ActiveWorkbook.Path & "\" & myFileName
+
+    Set SourceWB = Workbooks(myFileName)
+    SourceWB.Activate
+
+    ' Aamu- ja iltalistat
+    SourceWB.Worksheets("Päiväkoti").Range("I5:M5").Value = _
+                                                          ThisWorkbook.Worksheets("Päiväkoti").Range("I5:M5").Value
+
+    ' Ruokakoonti
+    SourceWB.Worksheets("Päiväkoti").Range("G8:G8").Value = _
+                                                          ThisWorkbook.Worksheets("Päiväkoti").Range("G8:G8").Value
+
+    ' Ruokatilausten lähettäminen
+    SourceWB.Worksheets("Päiväkoti").Range("I9:I9").Value = _
+                                                          ThisWorkbook.Worksheets("Päiväkoti").Range("I9:I9").Value
+    SourceWB.Worksheets("Päiväkoti").Range("I11:I11").Value = _
+                                                            ThisWorkbook.Worksheets("Päiväkoti").Range("I11:I11").Value
+    SourceWB.Worksheets("Päiväkoti").Range("I13:I13").Value = _
+                                                            ThisWorkbook.Worksheets("Päiväkoti").Range("I13:I13").Value
+    SourceWB.Worksheets("Päiväkoti").Range("I15:I15").Value = _
+                                                            ThisWorkbook.Worksheets("Päiväkoti").Range("I15:I15").Value
+
+    SourceWB.Worksheets("Lapset").Range("A2:DD1500").Value = _
+                                                           ThisWorkbook.Worksheets("Lapset").Range("A2:DD1500").Value
+    SourceWB.Worksheets("Ryhmät").Range("A2:DD1500").Value = _
+                                                           ThisWorkbook.Worksheets("Ryhmät").Range("A2:DD1500").Value
+
+    ' Tietokannan versio
+
+    SourceWB.Worksheets("Koodi").Range("A2").Value = ThisWorkbook.Worksheets("Code").Range("H2").Value
+
+
+    SourceWB.Save
+    SourceWB.Saved = True
+   
+    'SourceWB.Close
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    Application.AskToUpdateLinks = True
+End Sub
+
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    Dim myFileName As String
+    Dim SourceWB As Workbook
+    myFileName = "hoitoajat-data.xlsx"
+    Set SourceWB = Workbooks(myFileName)
+    'SourceWB.Close
+End Sub
+
+Sub migraatio(source As Integer)
+
+    Dim datakoodi As Integer
+    datakoodi = ThisWorkbook.Worksheets("Code").Range("H2").Value
+    ' 1 -> 2 (Päivystys siirretty ennen hoitoaikoja)
+    If datakoodi = 1 Then
+        Call SarakkeenSiirto("Lapset", 18, 7, True)
+        ThisWorkbook.Worksheets("Code").Range("H2").Value = 2
+    End If
+
+    ' 2 -> 3 (Päivälaput Päivystyksen oikealle puolelle)
+    If datakoodi = 2 Then
+        Call SarakkeenSiirto("Ryhmät", 20, 22, False)
+        ThisWorkbook.Worksheets("Code").Range("H2").Value = 3
+    End If
+
+    ' Todo 3-4 (Sukunimi viikonlopun jälkeen, 18 -> 22)
+    'If datakoodi = 3 Then
+    '    Call SarakkeenSiirto("Lapset", 18, 22, True)
+    '
+    ' Ruokanumeron fontin lisäys. Ruokalappujen yhdistys 1 oikealle (10 -> 11)
+    '    Call SarakkeenSiirto("Ryhmät", 10, 11, True)
+
+    ' Iltaruokien lisäys. Viikkolistan tulostus 4 oikealle, tuuppaus. (18 -> 22)
+    '    Call SarakkeenSiirto("Ryhmät", 18, 19, True)
+    '    Call SarakkeenSiirto("Ryhmät", 19, 20, True)
+    '    Call SarakkeenSiirto("Ryhmät", 20, 21, True)
+    '    Call SarakkeenSiirto("Ryhmät", 21, 22, True)
+
+    '    ThisWorkbook.Worksheets("Code").Range("H2").Value = 4
+    'End If
+
+
+End Sub
+
+Sub SarakkeenSiirto(SheetName As String, SourceRange As Integer, DestRange As Integer, tuuppaus As Boolean)
+
+    ' Tuuppaus False = 1 sarakkeen datan vaihto toisen sarakkeen datan kanssa
+    ' Tuuppaus True = vasemmalle: Tuupataan edessä olevia sarakkeita oikealle
+    '                             siirretään src-sarakkeen data -> dst sarakkeeseen.
+    '
+    ' Tuuppaus True = oikealle: vedetään edessä olevat sarakkeet oikealle.
+    '                           siirretään src-sarakkeen data dst -sarakkeeseen
+
+    Dim Sheet As Worksheet
+    Set Sheet = ThisWorkbook.Worksheets(SheetName)
+
+    Dim lastrow As Integer
+    lastrow = Sheet.ListObjects(1).Range.Rows.Count
+
+    ' 1 ensin source piiloon (VV2:VV2000)
+    Sheet.Range(Cells(2, 100), Cells(lastrow, 100)).Value = _
+                                                          Sheet.Range(Cells(2, SourceRange), Cells(lastrow, SourceRange)).Value
+
+    ' jos 2 FALSE, DestRange -> SourceRange
+    If tuuppaus = False Then
+        Sheet.Range(Cells(2, SourceRange), Cells(lastrow, SourceRange)).Value = _
+                                                                              Sheet.Range(Cells(2, DestRange), Cells(lastrow, DestRange)).Value
+
+        ' Jos 2 TRUE
+    Else
+        ' JOS srcrange > destrange, siirrä range(destrange - srcrange-1)     --> oikealle yksi
+        If SourceRange > DestRange Then
+            Sheet.Range(Cells(2, DestRange + 1), Cells(lastrow, SourceRange)).Value = _
+                                                                                    Sheet.Range(Cells(2, DestRange), Cells(lastrow, SourceRange - 1)).Value
+
+    
+            ' JOS srcrange < destrange, siirrä range(srcrange-1 - destrange) --> vasemmalle yksi
+        Else
+            Sheet.Range(Cells(2, SourceRange), Cells(lastrow, DestRange)).Value = _
+                                                                                Sheet.Range(Cells(2, SourceRange + 1), Cells(lastrow, DestRange + 1)).Value
+        End If
+    End If
+
+    ' 3 piilo -> Destrange
+    Sheet.Range(Cells(2, DestRange), Cells(lastrow, DestRange)).Value = _
+                                                                      Sheet.Range(Cells(2, 100), Cells(lastrow, 100)).Value
+
+    ' 4 Poistetaan piilo
+    Sheet.Range(Cells(2, 100), Cells(lastrow, 100)).Value = ""
+
+End Sub
+
